@@ -9,20 +9,12 @@ body {
   margin: 0;
   font-family: Arial;
   background: #f7f7f7;
-  transition: 0.3s;
-}
-
-.dark {
-  background: #1c1c1c;
-  color: white;
 }
 
 .header {
   padding: 15px;
   font-size: 22px;
   font-weight: bold;
-  display: flex;
-  justify-content: space-between;
 }
 
 .products {
@@ -34,10 +26,6 @@ body {
   border-radius: 12px;
   margin-bottom: 12px;
   overflow: hidden;
-}
-
-.dark .card {
-  background: #2a2a2a;
 }
 
 .card img {
@@ -58,28 +46,6 @@ button {
   border-radius: 8px;
 }
 
-.cart {
-  display: none;
-  padding: 10px;
-}
-
-.cart-item {
-  background: white;
-  padding: 10px;
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
-
-.dark .cart-item {
-  background: #2a2a2a;
-}
-
-.controls {
-  display: flex;
-  gap: 5px;
-  margin-top: 5px;
-}
-
 .bottom {
   position: fixed;
   bottom: 0;
@@ -88,56 +54,46 @@ button {
   padding: 10px;
   border-top: 1px solid #ddd;
 }
-
-.dark .bottom {
-  background: #2a2a2a;
-}
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  🍰 Меню
-  <div>
-    <button onclick="toggleTheme()">🌙</button>
-    <button onclick="openCart()">🛒</button>
-  </div>
-</div>
+<div class="header">🍰 Меню</div>
 
 <div id="products" class="products"></div>
-<div id="cart" class="cart"></div>
 
 <div class="bottom">
 💰 <span id="sum">0</span> грн
-<button onclick="checkout()">Оплатити</button>
+<button onclick="checkout()">Замовити</button>
 </div>
 
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-let cart = JSON.parse(localStorage.getItem("cart") || "{}");
-let dark = localStorage.getItem("dark") === "1";
+let cart = {};
+let products = [];
 
-// тема
-if(dark) document.body.classList.add("dark");
+// 🔥 ПІДКЛЮЧЕННЯ ТАБЛИЦІ
+fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSOYKMMFpllEzEtyL4tGb44Dm0Ra0mk7FCC4FsgnvRzjGnwCVt1gyIERrJbbMVpgYEb5kDRqjFkUSUu/pub?output=csv")
+  .then(res => res.text())
+  .then(csv => {
+    const rows = csv.split("\n").slice(1);
 
-function toggleTheme(){
-  dark = !dark;
-  document.body.classList.toggle("dark");
-  localStorage.setItem("dark", dark ? "1":"0");
-}
+    products = rows.map(row => {
+      const [name, price, img] = row.split(",");
+      return {
+        name: name.trim(),
+        price: Number(price),
+        img: img.trim()
+      };
+    });
 
-// товари
-const products = [
-  {name:"Макарон", price:40, img:"https://images.unsplash.com/photo-1551024601-bec78aea704b"},
-  {name:"Кукіс", price:40, img:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c"},
-  {name:"Чізкейк", price:120, img:"https://images.unsplash.com/photo-1612203985729-70726954388c"},
-  {name:"Брауні", price:90, img:"https://images.unsplash.com/photo-1606312619070-d48b4c652a52"}
-];
+    renderProducts();
+  });
 
-// рендер меню
+// рендер
 function renderProducts(){
   let html = "";
 
@@ -157,79 +113,13 @@ function renderProducts(){
   document.getElementById("products").innerHTML = html;
 }
 
-// додати
+// кошик
 function add(name, price){
-  if(!cart[name]) cart[name] = {price:price, count:0};
+  if(!cart[name]) cart[name] = {price, count:0};
   cart[name].count++;
-  save();
   update();
 }
 
-// кошик
-function openCart(){
-  document.getElementById("products").style.display="none";
-  document.getElementById("cart").style.display="block";
-  renderCart();
-}
-
-// назад
-function back(){
-  document.getElementById("products").style.display="block";
-  document.getElementById("cart").style.display="none";
-}
-
-// рендер кошика
-function renderCart(){
-  let html = `<button onclick="back()">⬅ Назад</button><br><br>`;
-
-  for(let i in cart){
-    let p = cart[i];
-
-    html += `
-    <div class="cart-item">
-      <b>${i}</b><br>
-      ${p.price * p.count} грн
-
-      <div class="controls">
-        <button onclick="minus('${i}')">-</button>
-        <span>${p.count}</span>
-        <button onclick="plus('${i}')">+</button>
-        <button onclick="removeItem('${i}')">❌</button>
-      </div>
-    </div>
-    `;
-  }
-
-  html += `<button onclick="clearCart()">Очистити кошик</button>`;
-
-  document.getElementById("cart").innerHTML = html;
-}
-
-// + -
-function plus(name){
-  cart[name].count++;
-  save(); update(); renderCart();
-}
-
-function minus(name){
-  cart[name].count--;
-  if(cart[name].count <= 0) delete cart[name];
-  save(); update(); renderCart();
-}
-
-// видалити
-function removeItem(name){
-  delete cart[name];
-  save(); update(); renderCart();
-}
-
-// очистити
-function clearCart(){
-  cart = {};
-  save(); update(); renderCart();
-}
-
-// сума
 function update(){
   let total = 0;
   for(let i in cart){
@@ -238,12 +128,7 @@ function update(){
   document.getElementById("sum").innerText = total;
 }
 
-// збереження
-function save(){
-  localStorage.setItem("cart", JSON.stringify(cart));
-}
-
-// 💳 оформлення (поки без реальної оплати)
+// оформлення
 function checkout(){
   if(Object.keys(cart).length === 0){
     alert("Кошик пустий");
@@ -268,10 +153,6 @@ function checkout(){
 
   tg.sendData(text);
 }
-
-// старт
-renderProducts();
-update();
 </script>
 
 </body>
