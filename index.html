@@ -62,7 +62,6 @@ button {
   padding: 10px;
   border-top: 1px solid #ddd;
 }
-
 </style>
 </head>
 
@@ -112,15 +111,25 @@ button {
 
 <div class="bottom">
 🛒 <span id="sum">0</span> грн
-<button onclick="send(alert)">Оформити</button>
+<button onclick="sendOrder()">Оформити</button>
 </div>
+
+<script>
 let cart = [];
+let tg = window.Telegram.WebApp;
 
 function add(name, price){
   cart.push({name, price});
-  alert(name + " додано в кошик");
+  update();
 }
-  function sendOrder(){
+
+function update(){
+  let total = 0;
+  cart.forEach(i => total += i.price);
+  document.getElementById("sum").innerText = total;
+}
+
+function sendOrder(){
   if(cart.length === 0){
     alert("Кошик пустий");
     return;
@@ -141,41 +150,9 @@ function add(name, price){
   }
 
   tg.sendData(text);
+  tg.close();
 }
-<script>
-let cart = [];
-let tg = window.Telegram.WebApp;
+</script>
 
-function add(name, price){
-  cart.push({name, price});
-  update();
-}
-
-function update(){
-  let total = 0;
-  cart.forEach(i => total += i.price);
-  document.getElementById("sum").innerText = total;
-}
-
-function send(){
-  if(cart.length == 0){
-    alert("Кошик пустий");
-    return;
-  }
-
-function send(){
- let text = "🛒 НОВЕ ЗАМОВЛЕННЯ:\n\n";
-let total = 0;
-
-cart.forEach(item => {
-  text += "🍰 " + item.name + " — " + item.price + " грн\n";
-  total += item.price;
-});
-
-text += "\n💰 Сума: " + total + " грн";
-
-if (tg.initDataUnsafe.user) {
-  text += "\n👤 @" + (tg.initDataUnsafe.user.username || "без username");
-}
-
-tg.sendData(text);
+</body>
+</html>
