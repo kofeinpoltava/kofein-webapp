@@ -107,9 +107,9 @@ async function loadMenu() {
     if (!name) return;
 
     allProducts.push({
-      category,
+      category: category?.trim(),
       name,
-      price: Number(price),
+      price: Number(price) || 0,
       img,
       desc
     });
@@ -122,10 +122,9 @@ async function loadMenu() {
 function renderCategories() {
   const container = document.getElementById("categories");
 
-  // чистимо категорії
   const categories = ["Всі", ...new Set(
     allProducts
-      .map(p => p.category?.trim())
+      .map(p => p.category)
       .filter(cat => cat && cat.length > 0)
   )];
 
