@@ -114,7 +114,34 @@ button {
 🛒 <span id="sum">0</span> грн
 <button onclick="send(alert)">Оформити</button>
 </div>
+let cart = [];
 
+function add(name, price){
+  cart.push({name, price});
+  alert(name + " додано в кошик");
+}
+  function sendOrder(){
+  if(cart.length === 0){
+    alert("Кошик пустий");
+    return;
+  }
+
+  let text = "🛒 НОВЕ ЗАМОВЛЕННЯ:\n\n";
+  let total = 0;
+
+  cart.forEach(item => {
+    text += "🍰 " + item.name + " — " + item.price + " грн\n";
+    total += item.price;
+  });
+
+  text += "\n💰 Сума: " + total + " грн";
+
+  if (tg.initDataUnsafe.user) {
+    text += "\n👤 @" + (tg.initDataUnsafe.user.username || "без username");
+  }
+
+  tg.sendData(text);
+}
 <script>
 let cart = [];
 let tg = window.Telegram.WebApp;
