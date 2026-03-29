@@ -122,7 +122,12 @@ async function loadMenu() {
 function renderCategories() {
   const container = document.getElementById("categories");
 
-  const categories = ["Всі", ...new Set(allProducts.map(p => p.category))];
+  // чистимо категорії
+  const categories = ["Всі", ...new Set(
+    allProducts
+      .map(p => p.category?.trim())
+      .filter(cat => cat && cat.length > 0)
+  )];
 
   container.innerHTML = "";
 
