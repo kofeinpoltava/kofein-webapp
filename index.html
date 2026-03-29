@@ -9,51 +9,35 @@ body {
   margin: 0;
   font-family: Arial;
   background: #f7f7f7;
+  transition: 0.3s;
+}
+
+.dark {
+  background: #1c1c1c;
+  color: white;
 }
 
 .header {
   padding: 15px;
   font-size: 22px;
   font-weight: bold;
-}
-
-.categories {
   display: flex;
-  gap: 10px;
-  padding: 10px;
-  overflow-x: auto;
-}
-
-.cat {
-  background: white;
-  padding: 8px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.active {
-  background: #ff4d6d;
-  color: white;
+  justify-content: space-between;
 }
 
 .products {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
   padding: 10px;
-  padding-bottom: 120px;
 }
 
 .card {
   background: white;
-  border-radius: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
   overflow: hidden;
-  transition: 0.2s;
 }
 
-.card:active {
-  transform: scale(0.98);
+.dark .card {
+  background: #2a2a2a;
 }
 
 .card img {
@@ -63,7 +47,37 @@ body {
 }
 
 .card-content {
-  padding: 12px;
+  padding: 10px;
+}
+
+button {
+  background: #ff4d6d;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.cart {
+  display: none;
+  padding: 10px;
+}
+
+.cart-item {
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.dark .cart-item {
+  background: #2a2a2a;
+}
+
+.controls {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
 }
 
 .bottom {
@@ -75,132 +89,179 @@ body {
   border-top: 1px solid #ddd;
 }
 
-button {
-  background: #ff4d6d;
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  width: 100%;
+.dark .bottom {
+  background: #2a2a2a;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">🍰 Меню</div>
+<div class="header">
+  🍰 Меню
+  <div>
+    <button onclick="toggleTheme()">🌙</button>
+    <button onclick="openCart()">🛒</button>
+  </div>
+</div>
 
-<div class="categories" id="cats"></div>
-
-<div class="products" id="products"></div>
+<div id="products" class="products"></div>
+<div id="cart" class="cart"></div>
 
 <div class="bottom">
-🛒 <span id="sum">0</span> грн
-<button onclick="sendOrder()">Оформити</button>
+💰 <span id="sum">0</span> грн
+<button onclick="checkout()">Оплатити</button>
 </div>
 
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// 📦 товари
-const products = [
-  {name:"Макарон", price:40, cat:"Печиво", img:"https://images.unsplash.com/photo-1551024601-bec78aea704b"},
-  {name:"Кукіс", price:40, cat:"Печиво", img:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c"},
-  {name:"Чізкейк", price:120, cat:"Торти", img:"https://images.unsplash.com/photo-1612203985729-70726954388c"},
-  {name:"Брауні", price:90, cat:"Торти", img:"https://images.unsplash.com/photo-1606312619070-d48b4c652a52"}
-];
-
-let currentCat = "Всі";
-
-// 🧠 збережений кошик
 let cart = JSON.parse(localStorage.getItem("cart") || "{}");
+let dark = localStorage.getItem("dark") === "1";
 
-// категорії
-function renderCats(){
-  let cats = ["Всі", ...new Set(products.map(p => p.cat))];
-  let html = "";
+// тема
+if(dark) document.body.classList.add("dark");
 
-  cats.forEach(c => {
-    html += `<div class="cat ${c==currentCat?'active':''}" onclick="selectCat('${c}')">${c}</div>`;
-  });
-
-  document.getElementById("cats").innerHTML = html;
-}
-
-// вибір категорії
-function selectCat(cat){
-  currentCat = cat;
-  renderCats();
-  renderProducts();
+function toggleTheme(){
+  dark = !dark;
+  document.body.classList.toggle("dark");
+  localStorage.setItem("dark", dark ? "1":"0");
 }
 
 // товари
+const products = [
+  {name:"Макарон", price:40, img:"https://images.unsplash.com/photo-1551024601-bec78aea704b"},
+  {name:"Кукіс", price:40, img:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c"},
+  {name:"Чізкейк", price:120, img:"https://images.unsplash.com/photo-1612203985729-70726954388c"},
+  {name:"Брауні", price:90, img:"https://images.unsplash.com/photo-1606312619070-d48b4c652a52"}
+];
+
+// рендер меню
 function renderProducts(){
   let html = "";
 
-  products
-    .filter(p => currentCat==="Всі" || p.cat===currentCat)
-    .forEach(p => {
-      html += `
-      <div class="card">
-        <img src="${p.img}">
-        <div class="card-content">
-          <div><b>${p.name}</b></div>
-          <div>${p.price} грн</div>
-          <button onclick="add('${p.name}', ${p.price})">Додати</button>
-        </div>
+  products.forEach(p => {
+    html += `
+    <div class="card">
+      <img src="${p.img}">
+      <div class="card-content">
+        <b>${p.name}</b><br>
+        ${p.price} грн<br><br>
+        <button onclick="add('${p.name}', ${p.price})">Додати</button>
       </div>
-      `;
-    });
+    </div>
+    `;
+  });
 
   document.getElementById("products").innerHTML = html;
 }
 
-// ➕ додати
+// додати
 function add(name, price){
-  if(!cart[name]) cart[name] = {price: price, count:0};
+  if(!cart[name]) cart[name] = {price:price, count:0};
   cart[name].count++;
-
   save();
   update();
 }
 
-// 💾 збереження
+// кошик
+function openCart(){
+  document.getElementById("products").style.display="none";
+  document.getElementById("cart").style.display="block";
+  renderCart();
+}
+
+// назад
+function back(){
+  document.getElementById("products").style.display="block";
+  document.getElementById("cart").style.display="none";
+}
+
+// рендер кошика
+function renderCart(){
+  let html = `<button onclick="back()">⬅ Назад</button><br><br>`;
+
+  for(let i in cart){
+    let p = cart[i];
+
+    html += `
+    <div class="cart-item">
+      <b>${i}</b><br>
+      ${p.price * p.count} грн
+
+      <div class="controls">
+        <button onclick="minus('${i}')">-</button>
+        <span>${p.count}</span>
+        <button onclick="plus('${i}')">+</button>
+        <button onclick="removeItem('${i}')">❌</button>
+      </div>
+    </div>
+    `;
+  }
+
+  html += `<button onclick="clearCart()">Очистити кошик</button>`;
+
+  document.getElementById("cart").innerHTML = html;
+}
+
+// + -
+function plus(name){
+  cart[name].count++;
+  save(); update(); renderCart();
+}
+
+function minus(name){
+  cart[name].count--;
+  if(cart[name].count <= 0) delete cart[name];
+  save(); update(); renderCart();
+}
+
+// видалити
+function removeItem(name){
+  delete cart[name];
+  save(); update(); renderCart();
+}
+
+// очистити
+function clearCart(){
+  cart = {};
+  save(); update(); renderCart();
+}
+
+// сума
+function update(){
+  let total = 0;
+  for(let i in cart){
+    total += cart[i].price * cart[i].count;
+  }
+  document.getElementById("sum").innerText = total;
+}
+
+// збереження
 function save(){
   localStorage.setItem("cart", JSON.stringify(cart));
 }
 
-// 💰 сума
-function update(){
-  let total = 0;
-
-  for(let i in cart){
-    total += cart[i].price * cart[i].count;
-  }
-
-  document.getElementById("sum").innerText = total;
-}
-
-// 📤 замовлення
-function sendOrder(){
+// 💳 оформлення (поки без реальної оплати)
+function checkout(){
   if(Object.keys(cart).length === 0){
     alert("Кошик пустий");
     return;
   }
 
-  let text = "🛒 НОВЕ ЗАМОВЛЕННЯ\n\n";
+  let text = "🛒 ЗАМОВЛЕННЯ\n\n";
   let total = 0;
 
   for(let i in cart){
     let p = cart[i];
-    text += "🍰 " + i + " x" + p.count + " — " + (p.price*p.count) + " грн\n";
+    text += i + " x" + p.count + "\n";
     total += p.price*p.count;
   }
 
-  text += "\n💰 Сума: " + total + " грн";
+  text += "\n💰 " + total + " грн";
 
-  if (tg.initDataUnsafe.user) {
+  if(tg.initDataUnsafe.user){
     let u = tg.initDataUnsafe.user;
     text += "\n👤 " + (u.username ? "@"+u.username : u.first_name);
   }
@@ -209,7 +270,6 @@ function sendOrder(){
 }
 
 // старт
-renderCats();
 renderProducts();
 update();
 </script>
