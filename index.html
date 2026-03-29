@@ -137,30 +137,18 @@ function send(){
   }
 
 function send(){
-  if(cart.length == 0){
-    alert("Кошик пустий");
-    return;
-  }
+ let text = "🛒 НОВЕ ЗАМОВЛЕННЯ:\n\n";
+let total = 0;
 
-  let text = "🛒 Нове замовлення:\n\n";
-  let total = 0;
+cart.forEach(item => {
+  text += "🍰 " + item.name + " — " + item.price + " грн\n";
+  total += item.price;
+});
 
-  cart.forEach(item => {
-    text += `🍰 ${item.name} — ${item.price} грн\n`;
-    total += item.price;
-  });
+text += "\n💰 Сума: " + total + " грн";
 
-  text += `\n💰 Сума: ${total} грн`;
-
-  if (tg.initDataUnsafe.user) {
-    text += `\n👤 @${tg.initDataUnsafe.user.username || "без username"}`;
-  }
-
-  tg.sendData(text);
-  tg.close();
-};
+if (tg.initDataUnsafe.user) {
+  text += "\n👤 @" + (tg.initDataUnsafe.user.username || "без username");
 }
-</script>
- 
-</body>
-</html>
+
+tg.sendData(text);
