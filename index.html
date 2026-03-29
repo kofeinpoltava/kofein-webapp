@@ -82,7 +82,7 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSOYKMMFpllEzEtyL4tGb44Dm
     const rows = csv.split("\n").slice(1);
 
     products = rows.map(row => {
-      const [name, price, img] = row.split(",");
+const [name, price, img] = row.split(";");
       return {
         name: name.trim(),
         price: Number(price),
