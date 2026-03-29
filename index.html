@@ -81,6 +81,36 @@ async function loadMenu() {
     const text = await res.text();
 
     const rows = text.split("\n").slice(1);
+
+rows.forEach(row => {
+  if (!row.trim()) return;
+
+  // правильний парсинг CSV
+  const parts = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+
+  if (!parts || parts.length < 3) return;
+
+  const category = parts[0]?.replace(/"/g, '');
+  const name = parts[1]?.replace(/"/g, '');
+  const price = parts[2]?.replace(/"/g, '');
+  const img = parts[3]?.replace(/"/g, '');
+  const desc = parts[4]?.replace(/"/g, '');
+
+  const item = document.createElement("div");
+  item.className = "card";
+
+  item.innerHTML = `
+    ${img && img !== 'link' ? `<img src="${img}">` : ""}
+    <div class="card-content">
+      <h3>${name}</h3>
+      <p>${desc ? desc.substring(0, 100) + "..." : ""}</p>
+      <b>${price} грн</b><br><br>
+      <button onclick="addToCart('${name}', ${price})">Додати</button>
+    </div>
+  `;
+
+  document.getElementById("products").appendChild(item);
+});
     const container = document.getElementById("products");
 
     container.innerHTML = "";
