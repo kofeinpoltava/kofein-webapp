@@ -69,14 +69,11 @@ button {
 </div>
 
 <script>
-const sheetURL = https://docs.google.com/spreadsheets/d/e/2PACX-1vSOYKMMFpllEzEtyL4tGb44Dm0Ra0mk7FCC4FsgnvRzjGnwCVt1gyIERrJbbMVpgYEb5kDRqjFkUSUu/pub?output=csv
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOYKMMFpllEzEtyL4tGb44Dm0Ra0mk7FCC4FsgnvRzjGnwCVt1gyIERrJbbMVpgYEb5kDRqjFkUSUu/pub?output=csv";
 
 async function loadMenu() {
   const res = await fetch(sheetURL);
-  let text = await res.text();
-
-  // виправляємо кодування
-  text = new TextDecoder("utf-8").decode(new Uint8Array([...text].map(c => c.charCodeAt(0))));
+  const text = await res.text();
 
   const rows = text.split("\n").slice(1);
   const container = document.getElementById("menu");
@@ -86,24 +83,24 @@ async function loadMenu() {
   rows.forEach(row => {
     if (!row.trim()) return;
 
-    // підтримка і , і ;
     let parts = row.split(",");
-    if (parts.length < 3) {
+    if (parts.length < 5) {
       parts = row.split(";");
     }
 
-    const [name, price, img] = parts;
+    const [category, name, price, img, desc] = parts;
 
-    if (!name) return;
+    if (!name || !price) return;
 
     const item = document.createElement("div");
     item.style.marginBottom = "15px";
 
     item.innerHTML = `
-      <div style="background:#fff;padding:10px;border-radius:12px">
-        ${img ? `<img src="${img.trim()}" style="width:100%;border-radius:10px">` : ""}
+      <div style="background:#fff;padding:12px;border-radius:12px">
+        ${img && img !== 'link' ? `<img src="${img.trim()}" style="width:100%;border-radius:10px">` : ""}
         <h3>${name}</h3>
-        <p>${price} грн</p>
+        <p>${desc ? desc.substring(0, 80) + "..." : ""}</p>
+        <b>${price} грн</b><br><br>
         <button onclick="addToCart('${name}', ${price})">Додати</button>
       </div>
     `;
@@ -118,7 +115,6 @@ let total = 0;
 function addToCart(name, price) {
   cart.push({name, price});
   total += Number(price);
-
   document.getElementById("total").innerText = total + " грн";
 }
 
