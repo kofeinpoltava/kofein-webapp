@@ -22,6 +22,7 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   padding: 10px;
+  padding-bottom: 100px;
 }
 
 .card {
@@ -46,12 +47,17 @@ body {
 
 button {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   background: black;
   color: white;
   border: none;
   margin-top: 5px;
   border-radius: 6px;
+  font-size: 14px;
+}
+
+button:active {
+  opacity: 0.7;
 }
 
 .bottom {
@@ -61,6 +67,7 @@ button {
   background: white;
   padding: 10px;
   border-top: 1px solid #ddd;
+  z-index: 999;
 }
 </style>
 </head>
@@ -76,7 +83,7 @@ button {
 <div class="card-content">
 <div>Макарон</div>
 <div class="price">40 грн</div>
-<button onclick="add('Макарон',40)">Додати</button>
+<button onclick="addToCart('Макарон',40)">Додати</button>
 </div>
 </div>
 
@@ -85,7 +92,7 @@ button {
 <div class="card-content">
 <div>Кукіс</div>
 <div class="price">40 грн</div>
-<button onclick="add('Кукіс',40)">Додати</button>
+<button onclick="addToCart('Кукіс',40)">Додати</button>
 </div>
 </div>
 
@@ -94,7 +101,7 @@ button {
 <div class="card-content">
 <div>Чізкейк</div>
 <div class="price">120 грн</div>
-<button onclick="add('Чізкейк',120)">Додати</button>
+<button onclick="addToCart('Чізкейк',120)">Додати</button>
 </div>
 </div>
 
@@ -103,7 +110,7 @@ button {
 <div class="card-content">
 <div>Шоколадний десерт</div>
 <div class="price">80 грн</div>
-<button onclick="add('Шоколадний десерт',80)">Додати</button>
+<button onclick="addToCart('Шоколадний десерт',80)">Додати</button>
 </div>
 </div>
 
@@ -115,20 +122,29 @@ button {
 </div>
 
 <script>
-let cart = [];
-let tg = window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 
-function add(name, price){
+// 🔥 обов'язкова ініціалізація
+tg.expand();
+
+let cart = [];
+
+// ➕ додати товар
+function addToCart(name, price){
   cart.push({name, price});
-  update();
+  updateSum();
 }
 
-function update(){
+// 💰 оновити суму
+function updateSum(){
   let total = 0;
-  cart.forEach(i => total += i.price);
+  for(let i = 0; i < cart.length; i++){
+    total += cart[i].price;
+  }
   document.getElementById("sum").innerText = total;
 }
 
+// 📤 відправити замовлення
 function sendOrder(){
   if(cart.length === 0){
     alert("Кошик пустий");
@@ -138,19 +154,19 @@ function sendOrder(){
   let text = "🛒 НОВЕ ЗАМОВЛЕННЯ:\n\n";
   let total = 0;
 
-  cart.forEach(item => {
-    text += "🍰 " + item.name + " — " + item.price + " грн\n";
-    total += item.price;
-  });
+  for(let i = 0; i < cart.length; i++){
+    text += "🍰 " + cart[i].name + " — " + cart[i].price + " грн\n";
+    total += cart[i].price;
+  }
 
   text += "\n💰 Сума: " + total + " грн";
 
-  if (tg.initDataUnsafe.user) {
-    text += "\n👤 @" + (tg.initDataUnsafe.user.username || "без username");
+  if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    let user = tg.initDataUnsafe.user;
+    text += "\n👤 " + (user.username ? "@" + user.username : user.first_name);
   }
 
   tg.sendData(text);
-  tg.close();
 }
 </script>
 
