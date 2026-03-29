@@ -44,6 +44,7 @@ button {
   border: none;
   padding: 8px;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .bottom {
@@ -71,52 +72,78 @@ button {
 <script>
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOYKMMFpllEzEtyL4tGb44Dm0Ra0mk7FCC4FsgnvRzjGnwCVt1gyIERrJbbMVpgYEb5kDRqjFkUSUu/pub?output=csv";
 
-async function loadMenu() {
-  const res = await fetch(sheetURL);
-  const text = await res.text();
-
-  const rows = text.split("\n").slice(1);
-  const container = document.getElementById("menu");
-
-  container.innerHTML = "";
-
-  rows.forEach(row => {
-    if (!row.trim()) return;
-
-    let parts = row.split(",");
-    if (parts.length < 5) {
-      parts = row.split(";");
-    }
-
-    const [category, name, price, img, desc] = parts;
-
-    if (!name || !price) return;
-
-    const item = document.createElement("div");
-    item.style.marginBottom = "15px";
-
-    item.innerHTML = `
-      <div style="background:#fff;padding:12px;border-radius:12px">
-        ${img && img !== 'link' ? `<img src="${img.trim()}" style="width:100%;border-radius:10px">` : ""}
-        <h3>${name}</h3>
-        <p>${desc ? desc.substring(0, 80) + "..." : ""}</p>
-        <b>${price} грн</b><br><br>
-        <button onclick="addToCart('${name}', ${price})">Додати</button>
-      </div>
-    `;
-
-    container.appendChild(item);
-  });
-}
-
 let cart = [];
 let total = 0;
+
+async function loadMenu() {
+  try {
+    const res = await fetch(sheetURL);
+    const text = await res.text();
+
+    const rows = text.split("\n").slice(1);
+    const container = document.getElementById("products");
+
+    container.innerHTML = "";
+
+    rows.forEach(row => {
+      if (!row.trim()) return;
+
+      let parts = row.split(",");
+      if (parts.length < 5) {
+        parts = row.split(";");
+      }
+
+      const [category, name, price, img, desc] = parts;
+
+      if (!name || !price) return;
+
+      const item = document.createElement("div");
+      item.className = "card";
+
+      item.innerHTML = `
+        ${img && img !== 'link' ? `<img src="${img.trim()}">` : ""}
+        <div class="card-content">
+          <h3>${name}</h3>
+          <p>${desc ? desc.substring(0, 80) + "..." : ""}</p>
+          <b>${price} грн</b><br><br>
+          <button onclick="addToCart('${name}', ${price})">Додати</button>
+        </div>
+      `;
+
+      container.appendChild(item);
+    });
+
+  } catch (e) {
+    console.error("Помилка завантаження:", e);
+  }
+}
 
 function addToCart(name, price) {
   cart.push({name, price});
   total += Number(price);
-  document.getElementById("total").innerText = total + " грн";
+
+  document.getElementById("sum").innerText = total;
+}
+
+function checkout() {
+  if (cart.length === 0) {
+    alert("Кошик пустий");
+    return;
+  }
+
+  let text = "🧾 Замовлення:\n\n";
+
+  cart.forEach(item => {
+    text += `• ${item.name} — ${item.price} грн\n`;
+  });
+
+  text += `\n💰 Разом: ${total} грн`;
+
+  Telegram.WebApp.sendData(text);
 }
 
 loadMenu();
 </script>
+
+</body>
+</html>
