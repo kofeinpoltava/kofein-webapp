@@ -15,21 +15,24 @@ body {
   padding: 15px;
   font-size: 22px;
   font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+}
+
+.products, .cart {
+  padding: 10px;
 }
 
 .products {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  padding: 10px;
-  padding-bottom: 120px;
+  gap: 10px;
 }
 
 .card {
   background: white;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
 .card img {
@@ -42,28 +45,23 @@ body {
   padding: 10px;
 }
 
-.price {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 button {
   background: #ff4d6d;
   color: white;
   border: none;
-  padding: 6px 10px;
+  padding: 6px;
   border-radius: 6px;
-  font-size: 14px;
 }
 
-.count {
-  font-weight: bold;
+.cart {
+  display: none;
+}
+
+.cart-item {
+  background: white;
+  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 10px;
 }
 
 .bottom {
@@ -73,19 +71,23 @@ button {
   background: white;
   padding: 10px;
   border-top: 1px solid #ddd;
-  z-index: 999;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">🍰 Десерти</div>
+<div class="header">
+  🍰 Десерти
+  <button onclick="openCart()">🛒</button>
+</div>
 
-<div class="products" id="products"></div>
+<div id="products" class="products"></div>
+
+<div id="cart" class="cart"></div>
 
 <div class="bottom">
-🛒 <span id="sum">0</span> грн
+💰 <span id="sum">0</span> грн
 <button onclick="sendOrder()">Оформити</button>
 </div>
 
@@ -93,7 +95,6 @@ button {
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// 📦 ТОВАРИ
 const products = [
   {name:"Макарон", price:40, img:"https://images.unsplash.com/photo-1551024601-bec78aea704b"},
   {name:"Кукіс", price:40, img:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c"},
@@ -102,95 +103,127 @@ const products = [
 ];
 
 let cart = {};
+let comment = "";
+let delivery = "Самовивіз";
 
-// 🧱 РЕНДЕР
-function render(){
+// рендер товарів
+function renderProducts(){
   let html = "";
-
   products.forEach(p => {
-    let count = cart[p.name] ? cart[p.name].count : 0;
-
     html += `
-    <div class="card">
-      <img src="${p.img}">
-      <div class="card-content">
-        <div>${p.name}</div>
-        <div class="price">${p.price} грн</div>
-
-        <div class="controls">
-          <button onclick="minus('${p.name}')">-</button>
-          <div class="count">${count}</div>
-          <button onclick="plus('${p.name}', ${p.price})">+</button>
+      <div class="card">
+        <img src="${p.img}">
+        <div class="card-content">
+          <div>${p.name}</div>
+          <div>${p.price} грн</div>
+          <button onclick="add('${p.name}', ${p.price})">Додати</button>
         </div>
-
       </div>
-    </div>
     `;
   });
-
   document.getElementById("products").innerHTML = html;
 }
 
-// ➕
-function plus(name, price){
-  if(!cart[name]){
-    cart[name] = {price: price, count: 0};
-  }
+// додати
+function add(name, price){
+  if(!cart[name]) cart[name] = {price: price, count:0};
   cart[name].count++;
   update();
 }
 
-// ➖
-function minus(name){
-  if(cart[name]){
-    cart[name].count--;
-    if(cart[name].count <= 0){
-      delete cart[name];
-    }
-  }
-  update();
+// кошик
+function openCart(){
+  document.getElementById("products").style.display = "none";
+  document.getElementById("cart").style.display = "block";
+  renderCart();
 }
 
-// 💰 сума
-function update(){
-  let total = 0;
+// назад
+function back(){
+  document.getElementById("products").style.display = "grid";
+  document.getElementById("cart").style.display = "none";
+}
+
+// рендер кошика
+function renderCart(){
+  let html = "<button onclick='back()'>⬅ Назад</button><br><br>";
 
   for(let item in cart){
-    total += cart[item].price * cart[item].count;
+    let p = cart[item];
+    html += `
+      <div class="cart-item">
+        ${item} x${p.count} — ${p.price * p.count} грн
+      </div>
+    `;
   }
 
-  document.getElementById("sum").innerText = total;
-  render();
+  html += `
+    <br>
+    <div>
+      📝 Коментар:<br>
+      <input type="text" onchange="comment=this.value">
+    </div>
+
+    <br>
+    <div>
+      🚚 Доставка:<br>
+      <select onchange="delivery=this.value">
+        <option>Самовивіз</option>
+        <option>Кур'єр</option>
+      </select>
+    </div>
+
+    <br>
+    <button onclick="clearCart()">Очистити кошик</button>
+  `;
+
+  document.getElementById("cart").innerHTML = html;
 }
 
-// 📤 замовлення
+// очистити
+function clearCart(){
+  cart = {};
+  update();
+  renderCart();
+}
+
+// сума
+function update(){
+  let total = 0;
+  for(let i in cart){
+    total += cart[i].price * cart[i].count;
+  }
+  document.getElementById("sum").innerText = total;
+}
+
+// відправка
 function sendOrder(){
   if(Object.keys(cart).length === 0){
     alert("Кошик пустий");
     return;
   }
 
-  let text = "🛒 НОВЕ ЗАМОВЛЕННЯ:\n\n";
-  let total = 0;
+  let text = "🛒 НОВЕ ЗАМОВЛЕННЯ\n\n";
 
-  for(let item in cart){
-    let p = cart[item];
-    text += "🍰 " + item + " x" + p.count + " — " + (p.price * p.count) + " грн\n";
-    total += p.price * p.count;
+  for(let i in cart){
+    let p = cart[i];
+    text += "🍰 " + i + " x" + p.count + "\n";
   }
 
-  text += "\n💰 Сума: " + total + " грн";
+  text += "\n🚚 " + delivery;
+  if(comment) text += "\n📝 " + comment;
 
-  if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-    let user = tg.initDataUnsafe.user;
-    text += "\n👤 " + (user.username ? "@" + user.username : user.first_name);
+  text += "\n💰 Сума: " + document.getElementById("sum").innerText;
+
+  if (tg.initDataUnsafe.user) {
+    let u = tg.initDataUnsafe.user;
+    text += "\n👤 " + (u.username ? "@" + u.username : u.first_name);
   }
 
   tg.sendData(text);
 }
 
-// перший запуск
-render();
+renderProducts();
 </script>
 
 </body>
