@@ -1,56 +1,140 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Kofein Desserts</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body { font-family: Arial; padding: 15px; }
-    .product { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
-    button { background: black; color: white; padding: 10px; border: none; }
-  </style>
+<meta charset="UTF-8">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #f2f2f2;
+}
+
+.header {
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 10px;
+}
+
+.price {
+  font-weight: bold;
+}
+
+button {
+  width: 100%;
+  padding: 8px;
+  background: black;
+  color: white;
+  border: none;
+  margin-top: 5px;
+  border-radius: 6px;
+}
+
+.bottom {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: white;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+}
+
+</style>
 </head>
+
 <body>
 
-<h2>🍰 Наші десерти</h2>
+<div class="header">🍰 Наші десерти</div>
 
-<div class="product">
-  <h3>Макарон</h3>
-  <p>Ціна: 80 грн</p>
-  <button onclick="addToCart('Макарон', 80)">Додати</button>
+<div class="products">
+
+<div class="card">
+<img src="https://images.unsplash.com/photo-1551024601-bec78aea704b">
+<div class="card-content">
+<div>Макарон</div>
+<div class="price">40 грн</div>
+<button onclick="add('Макарон',40)">Додати</button>
+</div>
 </div>
 
-<div class="product">
-  <h3>Чізкейк</h3>
-  <p>Ціна: 120 грн</p>
-  <button onclick="addToCart('Чізкейк', 120)">Додати</button>
+<div class="card">
+<img src="https://images.unsplash.com/photo-1606313564200-e75d5e30476c">
+<div class="card-content">
+<div>Кукіс</div>
+<div class="price">40 грн</div>
+<button onclick="add('Кукіс',40)">Додати</button>
+</div>
 </div>
 
-<h3>🛒 Кошик:</h3>
-<ul id="cart"></ul>
+<div class="card">
+<img src="https://images.unsplash.com/photo-1612203985729-70726954388c">
+<div class="card-content">
+<div>Чізкейк</div>
+<div class="price">120 грн</div>
+<button onclick="add('Чізкейк',120)">Додати</button>
+</div>
+</div>
 
-<button onclick="sendOrder()">Оформити замовлення</button>
+<div class="card">
+<img src="https://images.unsplash.com/photo-1606312619070-d48b4c652a52">
+<div class="card-content">
+<div>Шоколадний десерт</div>
+<div class="price">80 грн</div>
+<button onclick="add('Шоколадний десерт',80)">Додати</button>
+</div>
+</div>
+
+</div>
+
+<div class="bottom">
+🛒 <span id="sum">0</span> грн
+<button onclick="send()">Оформити</button>
+</div>
 
 <script>
 let cart = [];
+let tg = window.Telegram.WebApp;
 
-function addToCart(name, price) {
+function add(name, price){
   cart.push({name, price});
-  renderCart();
+  update();
 }
 
-function renderCart() {
-  let list = document.getElementById("cart");
-  list.innerHTML = "";
-  cart.forEach(item => {
-    let li = document.createElement("li");
-    li.innerText = item.name + " - " + item.price + " грн";
-    list.appendChild(li);
-  });
+function update(){
+  let total = 0;
+  cart.forEach(i => total += i.price);
+  document.getElementById("sum").innerText = total;
 }
 
-function sendOrder() {
-  let tg = window.Telegram.WebApp;
+function send(){
+  if(cart.length == 0){
+    alert("Кошик пустий");
+    return;
+  }
 
   tg.sendData(JSON.stringify(cart));
   tg.close();
