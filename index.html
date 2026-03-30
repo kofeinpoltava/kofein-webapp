@@ -105,7 +105,7 @@ button {
 </div>
 
 <script>
-const sheetURL = "https://script.google.com/macros/s/AKfycbwn8CyJh6vBW541JC1eSEkXYZLzW0KNDzuwIiIihekdrXNosQvo6Kw5mzNV2Yngua1LBw/exec?v=13";
+const sheetURL = "https://script.google.com/macros/s/AKfycbwn8CyJh6vBW541JC1eSEkXYZLzW0KNDzuwIiIihekdrXNosQvo6Kw5mzNV2Yngua1LBw/exec?v=14";
 
 let allProducts = [];
 let cart = [];
@@ -121,7 +121,8 @@ async function loadMenu() {
     name: item.name,
     price: Number(item.price) || 0,
     img: item.img,
-    desc: item.desc
+    desc: item.desc,
+    qty: item.qty ? item.qty.split(",").map(q => Number(q)) : [1]
   }));
 
   renderCategories();
@@ -166,9 +167,9 @@ function renderProducts(category) {
         <p>${p.desc ? p.desc.replace(/\\n/g, "<br>") : ""}</p>
 
         <div class="qty" id="qty-${index}">
-          <button onclick="setQty(${index}, 1)">1</button>
-          <button onclick="setQty(${index}, 12)">12</button>
-          <button onclick="setQty(${index}, 24)">24</button>
+          ${p.qty.map(q => `
+            <button onclick="setQty(${index}, ${q})">${q}</button>
+          `).join("")}
         </div>
 
         <b>${p.price} грн</b>
@@ -180,7 +181,9 @@ function renderProducts(category) {
     `;
 
     container.appendChild(item);
-    setQty(index, 1);
+
+    // дефолтне значення = перше з масиву
+    setQty(index, p.qty[0]);
   });
 }
 
