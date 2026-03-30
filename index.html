@@ -38,6 +38,7 @@ body {
   border-radius: 12px;
   margin-bottom: 12px;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .card img {
@@ -67,6 +68,24 @@ button {
   padding: 10px;
   border-top: 1px solid #ddd;
 }
+
+/* 🔥 MODAL */
+.modal {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+}
+
+.qty button {
+  margin-right: 5px;
+  background: #eee;
+  color: #000;
+}
 </style>
 </head>
 
@@ -83,12 +102,34 @@ button {
 <button onclick="checkout()">Замовити</button>
 </div>
 
+<!-- 🔥 MODAL -->
+<div id="modal" class="modal">
+  <h2 id="mName"></h2>
+  <p id="mDesc"></p>
+
+  <p><b>Кількість:</b></p>
+  <div class="qty">
+    <button onclick="setQty(1)">1</button>
+    <button onclick="setQty(12)">12</button>
+    <button onclick="setQty(24)">24</button>
+  </div>
+
+  <br>
+  <b id="mPrice"></b><br><br>
+
+  <button onclick="addFromModal()">ДОДАТИ В КОШИК</button>
+  <button onclick="closeModal()" style="background:#ccc;">Закрити</button>
+</div>
+
 <script>
 const sheetURL = "https://script.google.com/macros/s/AKfycbwn8CyJh6vBW541JC1eSEkXYZLzW0KNDzuwIiIihekdrXNosQvo6Kw5mzNV2Yngua1LBw/exec";
 
 let allProducts = [];
 let cart = [];
 let total = 0;
+
+let selectedProduct = null;
+let selectedQty = 1;
 
 async function loadMenu() {
   const res = await fetch(sheetURL);
@@ -137,18 +178,45 @@ function renderProducts(category) {
     const item = document.createElement("div");
     item.className = "card";
 
+    item.onclick = () => openModal(p);
+
     item.innerHTML = `
       ${p.img && p.img !== 'link' ? `<img src="${p.img}">` : ""}
       <div class="card-content">
         <h3>${p.name}</h3>
-        <p>${p.desc ? p.desc.replace(/\n/g, "<br>") : ""}</p>
-        <b>${p.price} грн</b><br><br>
-        <button onclick="addToCart('${p.name}', ${p.price})">Додати</button>
+        <p>${p.desc ? p.desc.substring(0, 60) + "..." : ""}</p>
+        <b>${p.price} грн</b>
       </div>
     `;
 
     container.appendChild(item);
   });
+}
+
+function openModal(p) {
+  selectedProduct = p;
+  selectedQty = 1;
+
+  document.getElementById("mName").innerText = p.name;
+  document.getElementById("mDesc").innerHTML = p.desc.replace(/\n/g, "<br>");
+  document.getElementById("mPrice").innerText = p.price + " грн";
+
+  document.getElementById("modal").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+function setQty(qty) {
+  selectedQty = qty;
+}
+
+function addFromModal() {
+  for (let i = 0; i < selectedQty; i++) {
+    addToCart(selectedProduct.name, selectedProduct.price);
+  }
+  closeModal();
 }
 
 function addToCart(name, price) {
