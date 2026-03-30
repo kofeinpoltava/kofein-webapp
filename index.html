@@ -110,6 +110,7 @@ const sheetURL = "https://script.google.com/macros/s/AKfycbwn8CyJh6vBW541JC1eSEk
 let allProducts = [];
 let cart = [];
 let total = 0;
+let quantities = {};
 
 async function loadMenu() {
   const res = await fetch(sheetURL);
@@ -162,7 +163,7 @@ function renderProducts(category) {
       ${p.img && p.img !== 'link' ? `<img src="${p.img}">` : ""}
       <div class="card-content">
         <h3>${p.name}</h3>
-        <p>${p.desc ? p.desc.replace(/\n/g, "<br>") : ""}</p>
+        <p>${p.desc ? p.desc.replace(/\\n/g, "<br>") : ""}</p>
 
         <div class="qty" id="qty-${index}">
           <button onclick="setQty(${index}, 1)">1</button>
@@ -179,13 +180,9 @@ function renderProducts(category) {
     `;
 
     container.appendChild(item);
-
-    // дефолт = 1
     setQty(index, 1);
   });
 }
-
-let quantities = {};
 
 function setQty(index, qty) {
   quantities[index] = qty;
@@ -227,7 +224,11 @@ function checkout() {
 
   text += `\n💰 Разом: ${total} грн`;
 
-  Telegram.WebApp.sendData(text);
+  if (window.Telegram && Telegram.WebApp) {
+    Telegram.WebApp.sendData(text);
+  } else {
+    alert(text);
+  }
 }
 
 loadMenu();
