@@ -84,7 +84,7 @@ button {
 </div>
 
 <script>
-const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOYKMMFpllEzEtyL4tGb44Dm0Ra0mk7FCC4FsgnvRzjGnwCVt1gyIERrJbbMVpgYEb5kDRqjFkUSUu/pub?output=csv";
+const sheetURL = "https://script.google.com/macros/s/AKfycbwn8CyJh6vBW541JC1eSEkXYZLzW0KNDzuwIiIihekdrXNosQvo6Kw5mzNV2Yngua1LBw/exec";
 
 let allProducts = [];
 let cart = [];
@@ -92,28 +92,15 @@ let total = 0;
 
 async function loadMenu() {
   const res = await fetch(sheetURL);
-  const text = await res.text();
+  const data = await res.json();
 
-  const rows = text.split("\n").slice(1);
-
-  rows.forEach(row => {
-    if (!row.trim()) return;
-
-    const parts = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-    if (!parts) return;
-
-    const [category, name, price, img, desc] = parts.map(p => p.replace(/"/g, '').trim());
-
-    if (!name) return;
-
-    allProducts.push({
-      category: category?.trim(),
-      name,
-      price: Number(price) || 0,
-      img,
-      desc
-    });
-  });
+  allProducts = data.map(item => ({
+    category: item.category?.toString().trim(),
+    name: item.name,
+    price: Number(item.price) || 0,
+    img: item.img,
+    desc: item.desc
+  }));
 
   renderCategories();
   renderProducts("Всі");
@@ -125,7 +112,7 @@ function renderCategories() {
   const categories = ["Всі", ...new Set(
     allProducts
       .map(p => p.category)
-      .filter(cat => cat && cat.length > 0)
+      .filter(cat => cat && !cat.includes("Склад"))
   )];
 
   container.innerHTML = "";
@@ -133,9 +120,7 @@ function renderCategories() {
   categories.forEach(cat => {
     const btn = document.createElement("button");
     btn.innerText = cat;
-
     btn.onclick = () => renderProducts(cat);
-
     container.appendChild(btn);
   });
 }
@@ -156,7 +141,7 @@ function renderProducts(category) {
       ${p.img && p.img !== 'link' ? `<img src="${p.img}">` : ""}
       <div class="card-content">
         <h3>${p.name}</h3>
-        <p>${p.desc ? p.desc.substring(0, 80) + "..." : ""}</p>
+        <p>${p.desc ? p.desc.replace(/\n/g, "<br>") : ""}</p>
         <b>${p.price} грн</b><br><br>
         <button onclick="addToCart('${p.name}', ${p.price})">Додати</button>
       </div>
@@ -186,7 +171,11 @@ function checkout() {
 
   text += `\n💰 Разом: ${total} грн`;
 
-  Telegram.WebApp.sendData(text);
+  if (window.Telegram && Telegram.WebApp) {
+    Telegram.WebApp.sendData(text);
+  } else {
+    alert(text);
+  }
 }
 
 loadMenu();
