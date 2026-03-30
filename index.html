@@ -11,162 +11,127 @@ body {
   background: #f7f7f7;
 }
 
-.header {
-  padding: 15px;
-  font-size: 22px;
-  font-weight: bold;
+/* 🔥 контейнер */
+.wrapper {
+  position: relative;
 }
 
-.categories {
-  display: flex;
-  overflow-x: auto;
-  padding: 10px;
-}
-
-.categories button {
-  margin-right: 8px;
-  background: #eee;
-  color: #000;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 8px;
-}
-
+/* 🔥 список товарів */
 .products {
   padding: 10px;
-  padding-bottom: 100px; /* щоб кнопка не перекривала */
+  padding-bottom: 140px;
 }
 
+/* 🔥 карточка */
 .card {
   background: white;
   border-radius: 12px;
   margin-bottom: 12px;
-  overflow: hidden;
-}
-
-.card img {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-}
-
-.card-content {
   padding: 10px;
 }
 
-.qty-buttons {
-  margin-top: 10px;
-}
-
+/* 🔥 кнопки кількості */
 .qty-buttons button {
-  margin: 3px;
+  margin: 4px;
   background: #eee;
-  color: #000;
+  color: black;
 }
 
-button {
-  background: #ff4d6d;
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
+/* 🔥 НИЖНЯ ПАНЕЛЬ — ВАЖЛИВО */
 .bottom {
   position: fixed;
   bottom: 0;
-  width: 100%;
+  left: 0;
+  right: 0;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
   background: white;
-  padding: 10px;
+  padding: 12px;
   border-top: 1px solid #ddd;
-  z-index: 9999;
+
+  z-index: 999999; /* 🔥 МАКС */
+}
+
+/* 🔥 кнопка */
+.order-btn {
+  background: #ff4d6d;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 16px;
+
+  position: relative;
+  z-index: 9999999; /* 🔥 ще вище */
+}
+
+/* ❗ УБИВАЄ ВСІ ПЕРЕКРИТТЯ */
+.bottom,
+.order-btn {
+  pointer-events: auto !important;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">🍰 Меню</div>
-<div id="categories" class="categories"></div>
-<div id="products" class="products"></div>
+<div class="wrapper">
+
+<div class="products" id="products"></div>
 
 <div class="bottom">
-💰 <span id="sum">0</span> грн
-<button onclick="checkout()">Замовити</button>
+  <div>💰 <span id="sum">0</span> грн</div>
+  <button class="order-btn" onclick="checkout()">Замовити</button>
+</div>
+
 </div>
 
 <script>
-const sheetURL = "https://script.google.com/macros/s/AKfycbwy6lgjcTbXFWpRMKLCngkP8gP7oygRjmWXzVY4E5S65bH6KqmUsa6njn-Hiz8hJLCZ9w/exec?v=12";
+const sheetURL = "https://script.google.com/macros/s/AKfycbwy6lgjcTbXFWpRMKLCngkP8gP7oygRjmWXzVY4E5S65bH6KqmUsa6njn-Hiz8hJLCZ9w/exec?v=15";
 
-let allProducts = [];
 let cart = [];
 let total = 0;
+let allProducts = [];
 
 async function loadMenu() {
   const res = await fetch(sheetURL);
   const data = await res.json();
 
   allProducts = data.map(item => ({
-    category: item.category?.toString().trim(),
     name: item.name,
     price: Number(item.price) || 0,
-    img: item.img,
-    desc: item.desc,
-    steps: item.steps ? item.steps.split(",").map(n => Number(n)) : [1, 5, 10]
+    desc: item.desc || "",
+    steps: item.steps
+      ? item.steps.split(",").map(n => Number(n))
+      : [1, 5, 10]
   }));
 
-  renderCategories();
-  renderProducts("Всі");
+  renderProducts();
 }
 
-function renderCategories() {
-  const container = document.getElementById("categories");
-
-  const categories = ["Всі", ...new Set(
-    allProducts.map(p => p.category).filter(c => c)
-  )];
-
-  container.innerHTML = "";
-
-  categories.forEach(cat => {
-    const btn = document.createElement("button");
-    btn.innerText = cat;
-    btn.onclick = () => renderProducts(cat);
-    container.appendChild(btn);
-  });
-}
-
-function renderProducts(category) {
+function renderProducts() {
   const container = document.getElementById("products");
   container.innerHTML = "";
 
-  const filtered = category === "Всі"
-    ? allProducts
-    : allProducts.filter(p => p.category === category);
-
-  filtered.forEach(p => {
-    const item = document.createElement("div");
-    item.className = "card";
+  allProducts.forEach(p => {
+    const el = document.createElement("div");
+    el.className = "card";
 
     const buttons = p.steps.map(s =>
       `<button onclick="addToCart('${p.name}', ${p.price}, ${s})">+${s}</button>`
     ).join("");
 
-    item.innerHTML = `
-      ${p.img && p.img !== 'link' ? `<img src="${p.img}">` : ""}
-      <div class="card-content">
-        <h3>${p.name}</h3>
-        <p>${p.desc || ""}</p>
-        <b>${p.price} грн</b>
-
-        <div class="qty-buttons">
-          ${buttons}
-        </div>
-      </div>
+    el.innerHTML = `
+      <h3>${p.name}</h3>
+      <p>${p.desc}</p>
+      <b>${p.price} грн</b>
+      <div class="qty-buttons">${buttons}</div>
     `;
 
-    container.appendChild(item);
+    container.appendChild(el);
   });
 }
 
@@ -205,10 +170,6 @@ function checkout() {
 }
 
 loadMenu();
-</script>
-
-</body>
-</html>
 </script>
 
 </body>
