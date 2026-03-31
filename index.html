@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kofein Desserts</title>
 
 <style>
 body {
@@ -10,109 +12,97 @@ body {
   background: #f5f5f5;
 }
 
-#menu {
+h2 {
+  padding: 15px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   padding: 10px;
-  padding-bottom: 80px;
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 10px;
+  background: #fff;
+  border-radius: 15px;
+  overflow: hidden;
 }
 
 .card img {
   width: 100%;
-  border-radius: 10px;
+  height: 120px;
+  object-fit: cover;
 }
 
-.qty button {
-  margin: 5px;
-  padding: 5px 10px;
-  border-radius: 8px;
-  border: none;
-  background: #eee;
+.card p {
+  padding: 10px;
+  margin: 0;
 }
 
 .bottom {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background: white;
+  background: #111;
+  color: white;
   display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-  z-index: 9999;
+  justify-content: space-around;
+  padding: 10px 0;
 }
 
-.order-btn {
-  background: #ff4d6d;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  cursor: pointer;
+.loader {
+  padding: 20px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="menu">Завантаження...</div>
+<h2>🏠 Головна</h2>
+
+<div id="app">
+  <p class="loader">Завантаження...</p>
+</div>
 
 <div class="bottom">
-  <div id="total">0 грн</div>
-  <button class="order-btn" onclick="order()">Замовити</button>
+  <div>🏠</div>
+  <div>📦</div>
+  <div>🔍</div>
+  <div>🛒</div>
+  <div>👤</div>
 </div>
 
 <script>
-const sheetURL = "ВСТАВ СВІЙ URL СЮДИ?v=1";
+const URL = "https://script.google.com/macros/s/AKfycbyvGNngeLKj18EuRlGaCtkTsqgVlPJ2bazvyRQOnt2aHDQVpRXccC0ptOJoqJOU5upuVw/exec?v=1";
 
-let cart = {};
-let total = 0;
-
-fetch(sheetURL)
+fetch(URL)
   .then(res => res.json())
   .then(data => {
-    const menu = document.getElementById("menu");
-    menu.innerHTML = "";
+    console.log("DATA:", data);
+
+    const app = document.getElementById("app");
+
+    let html = '<div class="grid">';
 
     data.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "card";
-
-      div.innerHTML = `
-        <img src="${item.img}">
-        <h3>${item.name}</h3>
-        <p>${item.desc}</p>
-        <b>${item.price} грн</b>
-        <div class="qty">
-          ${item.qty.map(q => `<button onclick="add('${item.name}', ${item.price}, ${q})">+${q}</button>`).join("")}
+      html += `
+        <div class="card">
+          <img src="${item.img}">
+          <p><b>${item.name}</b></p>
+          <p>${item.price} грн</p>
         </div>
       `;
-
-      menu.appendChild(div);
     });
+
+    html += '</div>';
+
+    app.innerHTML = html;
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById("app").innerHTML = "❌ Помилка завантаження";
   });
-
-function add(name, price, qty) {
-  if (!cart[name]) cart[name] = 0;
-  cart[name] += qty;
-  total += price * qty;
-
-  document.getElementById("total").innerText = total + " грн";
-}
-
-function order() {
-  if (total === 0) {
-    alert("Кошик пустий");
-    return;
-  }
-
-  alert("Замовлення на " + total + " грн оформлено!");
-}
 </script>
 
 </body>
