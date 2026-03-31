@@ -1,68 +1,128 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Menu</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
-body { margin:0; font-family:sans-serif; background:#f5f5f5; }
-.screen { display:none; padding-bottom:70px; }
-.active { display:block; }
-.header { padding:15px; font-size:20px; font-weight:bold; }
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px; }
-.card { background:#fff; border-radius:12px; overflow:hidden; }
-.card img { width:100%; height:120px; object-fit:cover; }
-.card p { padding:10px; }
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f5f5f5;
+}
+
+.screen {
+  display: none;
+  padding-bottom: 120px;
+}
+
+.active {
+  display: block;
+}
+
+.header {
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.card {
+  background: #fff;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.card img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.qty button {
+  margin: 5px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #eee;
+}
+
 .bottom-nav {
-  position:fixed; bottom:0; left:0; right:0;
-  height:60px; background:#222; display:flex;
-  justify-content:space-around; align-items:center;
-  color:#fff;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #222;
+  color: #fff;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 9999;
 }
-.nav-btn { cursor:pointer; }
+
+.nav-btn {
+  cursor: pointer;
+}
+
 .cart-bar {
-  position:fixed; bottom:60px; left:0; right:0;
-  background:#fff; padding:10px; display:flex;
-  justify-content:space-between; align-items:center;
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  z-index: 9999;
 }
-button { padding:10px 15px; border:none; border-radius:8px; background:#ff4d6d; color:#fff; cursor:pointer; }
+
+button.main {
+  background: #ff4d6d;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 10px;
+}
 </style>
 </head>
+
 <body>
 
+<!-- ГОЛОВНА -->
 <div id="home" class="screen active">
   <div class="header">🏠 Головна</div>
-  <div class="grid">
-    <div class="card"><img src="https://picsum.photos/200/120"><p>Макарон</p></div>
-    <div class="card"><img src="https://picsum.photos/200/121"><p>Печиво</p></div>
-  </div>
 </div>
 
+<!-- КАТАЛОГ -->
 <div id="catalog" class="screen">
   <div class="header">📦 Каталог</div>
   <div id="products"></div>
 </div>
 
+<!-- ПОШУК -->
 <div id="search" class="screen">
   <div class="header">🔍 Пошук</div>
-  <input placeholder="Пошук..." style="width:90%;margin:10px;padding:10px;">
+  <input placeholder="Пошук..." style="margin:10px;padding:10px;width:90%">
 </div>
 
+<!-- КОШИК -->
 <div id="cart" class="screen">
   <div class="header">🛒 Кошик</div>
   <div id="cartItems"></div>
 </div>
 
+<!-- ПРОФІЛЬ -->
 <div id="profile" class="screen">
   <div class="header">👤 Профіль</div>
-  <p style="padding:10px;">Ваш профіль</p>
 </div>
 
+<!-- БАР КОШИКА -->
 <div class="cart-bar">
   <div id="total">0 грн</div>
-  <button onclick="checkout()">Замовити</button>
+  <button class="main" onclick="checkout()">Замовити</button>
 </div>
 
+<!-- НИЖНЄ МЕНЮ -->
 <div class="bottom-nav">
   <div class="nav-btn" onclick="show('home')">🏠</div>
   <div class="nav-btn" onclick="show('catalog')">📦</div>
@@ -72,6 +132,8 @@ button { padding:10px 15px; border:none; border-radius:8px; background:#ff4d6d; 
 </div>
 
 <script>
+const sheetURL = "https://script.google.com/macros/s/AKfycbwy6lgjcTbXFWpRMKLCngkP8gP7oygRjmWXzVY4E5S65bH6KqmUsa6njn-Hiz8hJLCZ9w/exec?v=20";
+
 let cart = [];
 let total = 0;
 
@@ -80,47 +142,71 @@ function show(id){
   document.getElementById(id).classList.add('active');
 }
 
-function add(name, price){
-  cart.push({name, price});
-  total += price;
-  document.getElementById('total').innerText = total + ' грн';
-  renderCart();
+async function loadProducts(){
+  const el = document.getElementById('products');
+  el.innerHTML = 'Завантаження...';
+
+  try {
+    const res = await fetch(sheetURL);
+    const data = await res.json();
+
+    el.innerHTML = '';
+
+    data.forEach(p=>{
+      const min = Number(p.min || 1);
+
+      el.innerHTML += `
+        <div class="card">
+          ${p.img ? `<img src="${p.img}">` : ""}
+          <h3>${p.name}</h3>
+          <p>${p.desc || ""}</p>
+          <b>${p.price} грн</b>
+
+          <div class="qty">
+            <button onclick="add('${p.name}', ${p.price}, ${min})">+${min}</button>
+            <button onclick="add('${p.name}', ${p.price}, ${min*2})">+${min*2}</button>
+            <button onclick="add('${p.name}', ${p.price}, ${min*3})">+${min*3}</button>
+          </div>
+        </div>
+      `;
+    });
+
+  } catch(e){
+    el.innerHTML = "Помилка";
+    console.log(e);
+  }
 }
 
-function renderProducts(){
-  const list = [
-    {name:'Макарон', price:40},
-    {name:'Еклер', price:50}
-  ];
+function add(name, price, qty){
+  cart.push({name, price, qty});
+  total += price * qty;
 
-  const el = document.getElementById('products');
-  el.innerHTML = '';
-
-  list.forEach(p=>{
-    el.innerHTML += `
-      <div class="card">
-        <p>${p.name}</p>
-        <p>${p.price} грн</p>
-        <button onclick="add('${p.name}', ${p.price})">Додати</button>
-      </div>
-    `;
-  });
+  document.getElementById('total').innerText = total + ' грн';
+  renderCart();
 }
 
 function renderCart(){
   const el = document.getElementById('cartItems');
   el.innerHTML = '';
+
   cart.forEach(i=>{
-    el.innerHTML += `<p>${i.name} - ${i.price} грн</p>`;
+    el.innerHTML += `<p>${i.name} x${i.qty} — ${i.price * i.qty} грн</p>`;
   });
 }
 
 function checkout(){
-  if(cart.length===0){ alert('Кошик пустий'); return; }
+  if(cart.length === 0){
+    alert("Кошик пустий");
+    return;
+  }
 
-  let text = 'Замовлення:\n';
-  cart.forEach(i=> text += i.name + ' ' + i.price + '\n');
-  text += 'Разом: ' + total;
+  let text = "🧾 Замовлення:\n\n";
+
+  cart.forEach(i=>{
+    text += `${i.name} x${i.qty} — ${i.price * i.qty} грн\n`;
+  });
+
+  text += `\n💰 Разом: ${total} грн`;
 
   if(window.Telegram && Telegram.WebApp){
     Telegram.WebApp.sendData(text);
@@ -129,10 +215,8 @@ function checkout(){
   }
 }
 
-renderProducts();
+loadProducts();
 </script>
 
 </body>
-</html>
-
 </html>
