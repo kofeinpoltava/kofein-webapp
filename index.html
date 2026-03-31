@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body {
@@ -11,26 +10,16 @@ body {
   background: #f5f5f5;
 }
 
-.screen {
-  display: none;
-  padding-bottom: 120px;
-}
-
-.active {
-  display: block;
-}
-
-.header {
-  padding: 15px;
-  font-size: 20px;
-  font-weight: bold;
+#menu {
+  padding: 10px;
+  padding-bottom: 80px;
 }
 
 .card {
-  background: #fff;
-  margin: 10px;
-  padding: 10px;
+  background: white;
   border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
 .card img {
@@ -40,182 +29,90 @@ body {
 
 .qty button {
   margin: 5px;
-  padding: 6px 10px;
-  border: none;
+  padding: 5px 10px;
   border-radius: 8px;
+  border: none;
   background: #eee;
 }
 
-.bottom-nav {
+.bottom {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: #222;
-  color: #fff;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: 9999;
-}
-
-.nav-btn {
-  cursor: pointer;
-}
-
-.cart-bar {
-  position: fixed;
-  bottom: 60px;
-  left: 0;
-  right: 0;
+  width: 100%;
   background: white;
-  padding: 10px;
   display: flex;
   justify-content: space-between;
+  padding: 10px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
   z-index: 9999;
 }
 
-button.main {
+.order-btn {
   background: #ff4d6d;
   color: white;
   border: none;
-  padding: 10px 15px;
+  padding: 10px 20px;
   border-radius: 10px;
+  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ГОЛОВНА -->
-<div id="home" class="screen active">
-  <div class="header">🏠 Головна</div>
-</div>
+<div id="menu">Завантаження...</div>
 
-<!-- КАТАЛОГ -->
-<div id="catalog" class="screen">
-  <div class="header">📦 Каталог</div>
-  <div id="products"></div>
-</div>
-
-<!-- ПОШУК -->
-<div id="search" class="screen">
-  <div class="header">🔍 Пошук</div>
-  <input placeholder="Пошук..." style="margin:10px;padding:10px;width:90%">
-</div>
-
-<!-- КОШИК -->
-<div id="cart" class="screen">
-  <div class="header">🛒 Кошик</div>
-  <div id="cartItems"></div>
-</div>
-
-<!-- ПРОФІЛЬ -->
-<div id="profile" class="screen">
-  <div class="header">👤 Профіль</div>
-</div>
-
-<!-- БАР КОШИКА -->
-<div class="cart-bar">
+<div class="bottom">
   <div id="total">0 грн</div>
-  <button class="main" onclick="checkout()">Замовити</button>
-</div>
-
-<!-- НИЖНЄ МЕНЮ -->
-<div class="bottom-nav">
-  <div class="nav-btn" onclick="show('home')">🏠</div>
-  <div class="nav-btn" onclick="show('catalog')">📦</div>
-  <div class="nav-btn" onclick="show('search')">🔍</div>
-  <div class="nav-btn" onclick="show('cart')">🛒</div>
-  <div class="nav-btn" onclick="show('profile')">👤</div>
+  <button class="order-btn" onclick="order()">Замовити</button>
 </div>
 
 <script>
-const sheetURL = "https://script.google.com/macros/s/AKfycbwy6lgjcTbXFWpRMKLCngkP8gP7oygRjmWXzVY4E5S65bH6KqmUsa6njn-Hiz8hJLCZ9w/exec?v=20";
+const sheetURL = "ВСТАВ СВІЙ URL СЮДИ?v=1";
 
-let cart = [];
+let cart = {};
 let total = 0;
 
-function show(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+fetch(sheetURL)
+  .then(res => res.json())
+  .then(data => {
+    const menu = document.getElementById("menu");
+    menu.innerHTML = "";
 
-async function loadProducts(){
-  const el = document.getElementById('products');
-  el.innerHTML = 'Завантаження...';
+    data.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "card";
 
-  try {
-    const res = await fetch(sheetURL);
-    const data = await res.json();
-
-    el.innerHTML = '';
-
-    data.forEach(p=>{
-      const min = Number(p.min || 1);
-
-      el.innerHTML += `
-        <div class="card">
-          ${p.img ? `<img src="${p.img}">` : ""}
-          <h3>${p.name}</h3>
-          <p>${p.desc || ""}</p>
-          <b>${p.price} грн</b>
-
-          <div class="qty">
-            <button onclick="add('${p.name}', ${p.price}, ${min})">+${min}</button>
-            <button onclick="add('${p.name}', ${p.price}, ${min*2})">+${min*2}</button>
-            <button onclick="add('${p.name}', ${p.price}, ${min*3})">+${min*3}</button>
-          </div>
+      div.innerHTML = `
+        <img src="${item.img}">
+        <h3>${item.name}</h3>
+        <p>${item.desc}</p>
+        <b>${item.price} грн</b>
+        <div class="qty">
+          ${item.qty.map(q => `<button onclick="add('${item.name}', ${item.price}, ${q})">+${q}</button>`).join("")}
         </div>
       `;
+
+      menu.appendChild(div);
     });
+  });
 
-  } catch(e){
-    el.innerHTML = "Помилка";
-    console.log(e);
-  }
-}
-
-function add(name, price, qty){
-  cart.push({name, price, qty});
+function add(name, price, qty) {
+  if (!cart[name]) cart[name] = 0;
+  cart[name] += qty;
   total += price * qty;
 
-  document.getElementById('total').innerText = total + ' грн';
-  renderCart();
+  document.getElementById("total").innerText = total + " грн";
 }
 
-function renderCart(){
-  const el = document.getElementById('cartItems');
-  el.innerHTML = '';
-
-  cart.forEach(i=>{
-    el.innerHTML += `<p>${i.name} x${i.qty} — ${i.price * i.qty} грн</p>`;
-  });
-}
-
-function checkout(){
-  if(cart.length === 0){
+function order() {
+  if (total === 0) {
     alert("Кошик пустий");
     return;
   }
 
-  let text = "🧾 Замовлення:\n\n";
-
-  cart.forEach(i=>{
-    text += `${i.name} x${i.qty} — ${i.price * i.qty} грн\n`;
-  });
-
-  text += `\n💰 Разом: ${total} грн`;
-
-  if(window.Telegram && Telegram.WebApp){
-    Telegram.WebApp.sendData(text);
-  } else {
-    alert(text);
-  }
+  alert("Замовлення на " + total + " грн оформлено!");
 }
-
-loadProducts();
 </script>
 
 </body>
